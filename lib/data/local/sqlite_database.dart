@@ -8,27 +8,22 @@ import 'tables/jobs.dart';
 import 'tables/inspection_items.dart';
 import 'tables/attachments.dart';
 
-part 'sqlLite_database.g.dart';
+part 'sqlite_database.g.dart';
+
+LazyDatabase _openConnection() {
+  return LazyDatabase(() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dir.path, 'assetguard.db'));
+    return NativeDatabase(file);
+  });
+}
 
 @DriftDatabase(
-  tables: [
-    Users,
-    Jobs,
-    InspectionItems,
-    Attachments
-  ],
+  tables: [Users, Jobs, InspectionItems, Attachments],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
   int get schemaVersion => 1;
-}
-
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final dbPath = p.join(dir.path, 'assetguard.db');
-    return NativeDatabase(File(dbPath));
-  });
 }

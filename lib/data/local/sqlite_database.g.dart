@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'sqlLite_database.dart';
+part of 'sqlite_database.dart';
 
 // ignore_for_file: type=lint
 class $UsersTable extends Users with TableInfo<$UsersTable, User> {
