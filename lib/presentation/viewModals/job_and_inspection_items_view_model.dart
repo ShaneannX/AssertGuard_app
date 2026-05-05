@@ -25,4 +25,21 @@ class JobInspectionListViewModel extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
+
+  Future<void> deleteItem(String id, String jobId) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      final delete = await repo.softDelete(id); // soft delete + sync
+      delete;
+      items = await repo.getItemsForJob(jobId); // refresh list
+    } catch (e) {
+      errorMessage = 'Failed to delete job';
+    }
+
+    isLoading = false;
+    notifyListeners();
+  }
 }

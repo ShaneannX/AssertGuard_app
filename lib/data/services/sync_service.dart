@@ -53,6 +53,7 @@ class SyncService {
             await db.jobsDao.markSynced(
               job.id,
             ); // Then marked synced so it doesn't appear in pending anymore.
+            await db.jobsDao.softDelete(job.id);
           } catch (e) {
             print('Deletion Failed for job ${job.id}: $e');
           }
@@ -110,11 +111,13 @@ class SyncService {
         if (item.isDeleted) {
           try {
             await supabase.from('inspection_items').delete().eq('id', item.id);
-
             await db.inspectionItemsDao.markSynced(item.id);
+            await db.inspectionItemsDao.softDelete(item.id);
+            continue;
           } catch (e) {
             print("Deletion failed for inspection item ${item.id}: $e");
           }
+          
         }
         try {
           // print('JOBID: $item.jobID');
@@ -124,9 +127,10 @@ class SyncService {
             'jobId': item.jobId,
             'description': item.description,
             'notes': item.notes,
-            'createdAt': item.createdAt?.toIso8601String(),
+            'createdAt': item.createdAt.toIso8601String(),
             'updatedAt': item.updatedAt?.toIso8601String(),
           });
+          await db.inspectionItemsDao.markSynced(item.id);
         } catch (e) {
           print("Creating/ Updating inspection item ${item.id} Failed: $e");
         }

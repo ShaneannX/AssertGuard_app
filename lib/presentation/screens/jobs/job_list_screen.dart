@@ -49,7 +49,7 @@ class JobsListScreenState extends State<JobsListScreen> {
     );
 
     if (shouldDelete == true) {
-      vm.deleteJob(jobId);
+      await vm.deleteJob(jobId);
     }
   }
 
@@ -164,12 +164,9 @@ class JobsListScreenState extends State<JobsListScreen> {
                         IconButton(
                           icon: const Icon(Icons.delete),
                           onPressed: () async =>
-                              _confirmDelete(context, job.id, job.title),
+                              await _confirmDelete(context, job.id, job.title),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.sync),
-                          onPressed: () => syncService.syncJobInspection(),
-                        ),
+                        
                         IconButton(
                           icon: const Icon(Icons.add_circle),
                           onPressed: () async {
@@ -182,6 +179,9 @@ class JobsListScreenState extends State<JobsListScreen> {
                             );
                             vm.loadJobs();
                           },
+                        ),IconButton(
+                          icon: const Icon(Icons.sync),
+                          onPressed: () => syncService.syncJobInspection(),
                         ),
                       ],
                     ),

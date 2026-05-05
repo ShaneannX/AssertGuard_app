@@ -22,11 +22,10 @@ class InspectionItemsDao extends DatabaseAccessor<AppDatabase>
 
   // READ all inspection items for the job due to FK constraint.
   Future<List<InspectionItem>> getItemsForJob(String jobId) {
-    print('selecting items with $jobId');
-    print(select(inspectionItems).get());
-    return (select(
-      inspectionItems,
-    )..where((tbl) => tbl.jobId.equals(jobId))).get();
+    return (select(inspectionItems)
+          ..where((tbl) => tbl.jobId.equals(jobId))
+          ..where((tbl) => tbl.isDeleted.equals(false)))
+        .get();
   }
 
   // READ single item
@@ -53,12 +52,15 @@ class InspectionItemsDao extends DatabaseAccessor<AppDatabase>
 
   // SOFT DELETE - Marking the deleted flag as true.
   Future<void> softDelete(String id) {
-    return (update(inspectionItems)..where((tbl) => tbl.id.equals(id))).write(
-      const InspectionItemsCompanion(
+    final deleted = (update(inspectionItems)..where((tbl) => tbl.id.equals(id))).write(
+      InspectionItemsCompanion(
         isDeleted: Value(true),
         syncStatus: Value('pending'),
       ),
     );
+    print("DELETED COMPLETED: $deleted");
+    return deleted;
+
   }
 
   // HARD DELETE - If need to delete it off the local_db (However when getting all, i made sure to retrieve data that are not meant to be deleted. Also, deleted databases are deleted in Supabase. )
@@ -82,52 +84,52 @@ class InspectionItemsDao extends DatabaseAccessor<AppDatabase>
   // MARK AS SYNCED
   Future<void> markSynced(String id) {
     return (update(inspectionItems)..where((tbl) => tbl.id.equals(id))).write(
-      const InspectionItemsCompanion(syncStatus: Value('synced')),
+      InspectionItemsCompanion(syncStatus: Value('synced')),
     );
   }
 
   // INSERT OR UPDATE FROM CLOUD
   Future<void> insertFromCloud(Map<String, dynamic> json) async {
-  final id = json['id'].toString();
+    final id = json['id'].toString();
 
-  try {
-    final updated = await (update(inspectionItems)
-          ..where((tbl) => tbl.id.equals(id)))
-        .write(
-      InspectionItemsCompanion(
-        id: Value(id),
-        jobId: Value(json['jobId'].toString()),
-        description: Value(json['description'] ?? ''),
-        notes: Value(json['notes'] ?? ''),                    
-        createdBy: Value(json['createdBy'] ?? 'Unknown'),      
-        updatedAt: json['updatedAt'] != null
-            ? Value(DateTime.parse(json['updatedAt']))
-            : const Value(null),                               
-        syncStatus: Value('synced'),     
-        isDeleted: const Value(false),
-      ),
-    );
+    try {
+      final updated =
+          await (update(
+            inspectionItems,
+          )..where((tbl) => tbl.id.equals(id))).write(
+            InspectionItemsCompanion(
+              id: Value(id),
+              jobId: Value(json['jobId'].toString()),
+              description: Value(json['description'] ?? ''),
+              notes: Value(json['notes'] ?? ''),
+              createdBy: Value(json['createdBy'] ?? 'Unknown'),
+              updatedAt: json['updatedAt'] != null
+                  ? Value(DateTime.parse(json['updatedAt']))
+                  : const Value(null),
+              syncStatus: Value('synced'),
+              isDeleted: Value(false),
+            ),
+          );
 
-    if (updated == 0) {
-      await into(inspectionItems).insert(
-        InspectionItemsCompanion.insert(
-          id: id,
-          jobId: json['jobId'].toString(),
-          description: json['description'] ?? '',
-          notes: Value(json['notes'] ?? ''),                  
-          createdBy: json['createdBy'] ?? 'Unknown',   
-          createdAt: DateTime.parse(json['createdAt']),
-          updatedAt: json['updatedAt'] != null
-              ? Value(DateTime.parse(json['updatedAt']))
-              : const Value(null),
-          syncStatus: 'synced', 
-          isDeleted: const Value(false),
-        ),
-      );
+      if (updated == 0) {
+        await into(inspectionItems).insert(
+          InspectionItemsCompanion.insert(
+            id: id,
+            jobId: json['jobId'].toString(),
+            description: json['description'] ?? '',
+            notes: Value(json['notes'] ?? ''),
+            createdBy: json['createdBy'] ?? 'Unknown',
+            createdAt: DateTime.parse(json['createdAt']),
+            updatedAt: json['updatedAt'] != null
+                ? Value(DateTime.parse(json['updatedAt']))
+                : const Value(null),
+            syncStatus: 'synced',
+            isDeleted: Value(false),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Failed syncing Items from cloud db to local db: $e');
     }
-  } catch (e) {
-    print('Failed syncing Items from cloud db to local db: $e');
   }
-}
-
 }
