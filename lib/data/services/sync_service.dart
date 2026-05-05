@@ -124,6 +124,7 @@ class SyncService {
             'jobId': item.jobId,
             'description': item.description,
             'notes': item.notes,
+            'createdAt': item.createdAt?.toIso8601String(),
             'updatedAt': item.updatedAt?.toIso8601String(),
           });
         } catch (e) {
