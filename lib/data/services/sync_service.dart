@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'package:assetguard_app/data/repositories/jobs_repository.dart';
 import '../local_database/sqlite_database.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'connectivity_service.dart';
 
 class SyncService {
   final AppDatabase db;
-  final supabase = Supabase.instance.client;
+  final SupabaseClient supabase;
   final ConnectivityService connectivity;
 
   // STREAMS
@@ -24,7 +23,21 @@ class SyncService {
 
   bool _isSyncing = false;
 
-  SyncService({required this.db, required this.connectivity}) {
+  Map<String, dynamic> _jobToSupabaseJson(Job job) {
+    return {
+      'id': job.id,
+      'title': job.title,
+      'userId': job.userId,
+      'createdAt': job.createdAt.toIso8601String(),
+      'updatedAt': job.updatedAt?.toIso8601String(),
+    };
+  }
+
+  SyncService({
+    required this.db,
+    required this.connectivity,
+    SupabaseClient? supabase,
+  }) : supabase = supabase ?? Supabase.instance.client {
     connectivity.onStatusChange.listen((isOnline) async {
       if (isOnline) {
   
@@ -87,7 +100,7 @@ class SyncService {
         }
 
         try {
-          await supabase.from('jobs').upsert(job.toSupabaseJson());
+          await supabase.from('jobs').upsert(_jobToSupabaseJson(job));
           await db.jobsDao.markSynced(job.id);
         } catch (e) {
           print('Upsert failed for job ${job.id}: $e');
