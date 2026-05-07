@@ -76,15 +76,28 @@ class JobsListScreenState extends State<JobsListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Job Dashboard')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => JobCreateScreen()),
-          );
-          vm.loadJobs();
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'syncButton',
+            tooltip: 'Sync jobs',
+            onPressed: () => syncService.syncJobInspection(),
+            child: const Icon(Icons.sync),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'addButton',
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => JobCreateScreen()),
+              );
+              vm.loadJobs();
+            },
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
       body: RefreshIndicator(onRefresh: vm.refresh, child: _buildBody()),
     );
@@ -179,9 +192,6 @@ class JobsListScreenState extends State<JobsListScreen> {
                             );
                             vm.loadJobs();
                           },
-                        ),IconButton(
-                          icon: const Icon(Icons.sync),
-                          onPressed: () => syncService.syncJobInspection(),
                         ),
                       ],
                     ),
