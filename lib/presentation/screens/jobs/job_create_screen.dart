@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
+import 'package:assetguard_app/presentation/widgets/sync_status_banner.dart';
 import '../../viewModals/jobs/job_create_view_model.dart';
 import '../../../data/repositories/jobs_repository.dart';
 import '../../../data/services/connectivity_service.dart';
@@ -36,6 +37,8 @@ class _JobCreateScreenState extends State<JobCreateScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            SyncStatusBanner(sync: syncService),
+            const SizedBox(height: 16),
             // Title field
             TextField(
               decoration: const InputDecoration(labelText: "Job Title"),

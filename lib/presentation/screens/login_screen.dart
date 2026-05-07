@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../data/local_database/local_database_instance.dart';
+import '../../data/services/connectivity_service.dart';
+import '../../data/services/sync_service.dart';
 import 'home_screen.dart';
+
+final syncService = SyncService(db: db, connectivity: ConnectivityService.instance);
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -61,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              const SizedBox(height: 24),
               TextField(
                 controller: emailController,
                 decoration: const InputDecoration(labelText: 'Email'),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
+import 'package:assetguard_app/presentation/widgets/sync_status_banner.dart';
 import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/sync_service.dart';
 import '../../../data/repositories/inspection_respository.dart';
@@ -100,49 +101,61 @@ Future<void> _confirmDelete(
           ),
         ],
       ),
-      body: vm.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : vm.errorMessage != null
-          ? Center(
-              child: Text(
-                vm.errorMessage!,
-                style: const TextStyle(color: Colors.red),
-              ),
-            )
-          : ListView.builder(
-              itemCount: vm.items.length,
-              itemBuilder: (_, i) {
-                final item = vm.items[i];
-                return ListTile(
-                  title: Text('Description: ${item.description}'),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Notes: ${item.notes ?? "No notes"}'),
-                      const SizedBox(height: 4),
-                      Text('Created: ${item.createdAt.toLocal()}'),
-                      Text(
-                        'Updated: ${item.updatedAt?.toLocal() ?? "Never updated"}',
-                      ),
-                      IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: ()async => await _confirmDelete(context, item.id, item.description, item.jobId),
+      body: Column(
+        children: [
+          SyncStatusBanner(sync: syncService),
+          Expanded(
+            child: vm.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : vm.errorMessage != null
+                    ? Center(
+                        child: Text(
+                          vm.errorMessage!,
+                          style: const TextStyle(color: Colors.red),
                         ),
-                    ],
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            EditInspectionItemScreen(inspectionItemId: item.id),
+                      )
+                    : ListView.builder(
+                        itemCount: vm.items.length,
+                        itemBuilder: (_, i) {
+                          final item = vm.items[i];
+                          return ListTile(
+                            title: Text('Description: ${item.description}'),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Notes: ${item.notes ?? "No notes"}'),
+                                const SizedBox(height: 4),
+                                Text('Created: ${item.createdAt.toLocal()}'),
+                                Text(
+                                  'Updated: ${item.updatedAt?.toLocal() ?? "Never updated"}',
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () async => await _confirmDelete(
+                                    context,
+                                    item.id,
+                                    item.description,
+                                    item.jobId,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => EditInspectionItemScreen(
+                                    inspectionItemId: item.id,
+                                  ),
+                                ),
+                              ).then((_) => vm.load(widget.jobId));
+                            },
+                          );
+                        },
                       ),
-                    ).then((_) => vm.load(widget.jobId));
-                  },
-                  
-                );
-              },
             ),
+          ],
+        ),
     );
   }
 }

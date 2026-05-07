@@ -4,6 +4,7 @@ import '../inspections/create_inspection_item_screen.dart';
 import '../inspections/view_inspection_item_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
+import 'package:assetguard_app/presentation/widgets/sync_status_banner.dart';
 import '../../viewModals/jobs/jobs_list_view_model.dart';
 import '../../../data/repositories/jobs_repository.dart'; // Drift Job model
 import '../../../data/services/connectivity_service.dart';
@@ -103,7 +104,16 @@ class JobsListScreenState extends State<JobsListScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(onRefresh: vm.refresh, child: _buildBody()),
+      body: Column(
+        children: [
+          SyncStatusBanner(sync: syncService),
+          Expanded(
+            child: vm.isLoading || vm.error != null || vm.jobs.isEmpty
+                ? _buildBody()
+                : RefreshIndicator(onRefresh: vm.refresh, child: _buildBody()),
+          ),
+        ],
+      ),
     );
   }
 

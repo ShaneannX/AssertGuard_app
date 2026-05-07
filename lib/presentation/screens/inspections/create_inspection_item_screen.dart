@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
+import 'package:assetguard_app/presentation/widgets/sync_status_banner.dart';
 import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/sync_service.dart';
 import '../../../data/repositories/inspection_respository.dart';
@@ -41,6 +42,8 @@ class _CreateInspectionItemScreenState extends State<CreateInspectionItemScreen>
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            SyncStatusBanner(sync: syncService),
+            const SizedBox(height: 16),
             // Description field
             TextField(
               controller: vm.descriptionController,
