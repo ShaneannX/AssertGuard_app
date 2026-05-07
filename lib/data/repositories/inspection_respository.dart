@@ -7,9 +7,25 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class InspectionItemsRespository {
   final AppDatabase db;
   final SyncService sync;
-  final user = Supabase.instance.client.auth.currentUser!;
+  final Map<String, String> Function()? userInfoOverride;
 
-  InspectionItemsRespository({required this.db, required this.sync});
+  InspectionItemsRespository({
+    required this.db,
+    required this.sync,
+    this.userInfoOverride,
+  });
+
+  Map<String, String> _getUserInfo() {
+    if (userInfoOverride != null) {
+      return userInfoOverride!();
+    }
+
+    final user = Supabase.instance.client.auth.currentUser!;
+    return {
+      'id': user.id,
+      'name': user.userMetadata?['full_name'] ?? 'Unknown',
+    };
+  }
 
   // Create new Inspection items
   Future<void> createInspectionItems({
@@ -19,6 +35,8 @@ class InspectionItemsRespository {
   }) async {
     final id = const Uuid().v4();
 
+    final user = _getUserInfo();
+
     await db.inspectionItemsDao.insertItem(
       InspectionItemsCompanion.insert(
         id: id,
@@ -26,7 +44,7 @@ class InspectionItemsRespository {
         description: description,
         notes: Value(notes),
         createdAt: DateTime.now(),
-        createdBy: user.id,
+        createdBy: user['id']!,
         syncStatus: 'pending',
       ),
     );
