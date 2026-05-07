@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
 import '../../viewModals/jobs/job_create_view_model.dart';
 import '../../../data/repositories/jobs_repository.dart';
 import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/sync_service.dart';
 import '../../../data/local_database/local_database_instance.dart';
 
-final connectivity = ConnectivityService();
-final syncService = SyncService(db: db, connectivity: connectivity);
+final syncService = SyncService(db: db, connectivity: ConnectivityService.instance);
 final jobsRepository = JobsRepository(db: db, syncService: syncService);
 
 class JobCreateScreen extends StatefulWidget {
@@ -28,7 +28,10 @@ class _JobCreateScreenState extends State<JobCreateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Create Job")),
+      appBar: AppBar(
+        title: const Text("Create Job"),
+        actions: const [OnlineStatusIndicator()],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

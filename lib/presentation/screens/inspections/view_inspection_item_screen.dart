@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
 import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/sync_service.dart';
 import '../../../data/repositories/inspection_respository.dart';
@@ -7,8 +8,7 @@ import 'edit_inspection_item_screen.dart';
 import 'create_inspection_item_screen.dart';
 import '../../../data/local_database/local_database_instance.dart';
 
-final connectivity = ConnectivityService();
-final syncService = SyncService(db: db, connectivity: connectivity);
+final syncService = SyncService(db: db, connectivity: ConnectivityService.instance);
 final inspectionRepository = InspectionItemsRespository(
   db: db,
   sync: syncService,
@@ -69,7 +69,10 @@ Future<void> _confirmDelete(
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Inspection Items")),
+      appBar: AppBar(
+        title: const Text("Inspection Items"),
+        actions: const [OnlineStatusIndicator()],
+      ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

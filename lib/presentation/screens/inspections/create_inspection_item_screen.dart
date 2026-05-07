@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
 import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/sync_service.dart';
 import '../../../data/repositories/inspection_respository.dart';
 import '../../viewModals/inspections/inspection_create_view_model.dart';
 import '../../../data/local_database/local_database_instance.dart';
 
-final connectivity = ConnectivityService();
-final syncService = SyncService(db: db, connectivity: connectivity);
+final syncService = SyncService(db: db, connectivity: ConnectivityService.instance);
 final inspectionRepository = InspectionItemsRespository (db: db, sync: syncService);
 
 class CreateInspectionItemScreen extends StatefulWidget {
@@ -33,7 +33,10 @@ class _CreateInspectionItemScreenState extends State<CreateInspectionItemScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Add Inspection Item")),
+      appBar: AppBar(
+        title: const Text("Add Inspection Item"),
+        actions: const [OnlineStatusIndicator()],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

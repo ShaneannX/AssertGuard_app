@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
 import '../../viewModals/jobs/job_edit_view_model.dart';
 import '../../../data/repositories/jobs_repository.dart';
 import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/sync_service.dart';
 import '../../../data/local_database/local_database_instance.dart';
 
-final connectivity = ConnectivityService();
-final syncService = SyncService(db: db, connectivity: connectivity);
+final syncService = SyncService(db: db, connectivity: ConnectivityService.instance);
 final jobsRepository = JobsRepository(db: db, syncService: syncService);
 
 class JobEditScreen extends StatefulWidget {
@@ -49,6 +49,7 @@ class _JobEditScreenState extends State<JobEditScreen> {
             icon: const Icon(Icons.delete),
             onPressed: () => _confirmDelete(context, vm.jobId, vm.jobTitle),
           ),
+          const OnlineStatusIndicator(),
         ],
       ),
       body: Padding(

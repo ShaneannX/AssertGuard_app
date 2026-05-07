@@ -3,14 +3,15 @@ import 'job_create_screen.dart';
 import '../inspections/create_inspection_item_screen.dart';
 import '../inspections/view_inspection_item_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
 import '../../viewModals/jobs/jobs_list_view_model.dart';
 import '../../../data/repositories/jobs_repository.dart'; // Drift Job model
 import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/sync_service.dart';
 import '../../../data/local_database/local_database_instance.dart';
 
-final connectivity = ConnectivityService();
-final syncService = SyncService(db: db, connectivity: connectivity);
+
+final syncService = SyncService(db: db, connectivity: ConnectivityService.instance);
 final jobsRepository = JobsRepository(db: db, syncService: syncService);
 
 class JobsListScreen extends StatefulWidget {
@@ -75,7 +76,10 @@ class JobsListScreenState extends State<JobsListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Job Dashboard')),
+      appBar: AppBar(
+        title: Text('Job Dashboard'),
+        actions: const [OnlineStatusIndicator()],
+      ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

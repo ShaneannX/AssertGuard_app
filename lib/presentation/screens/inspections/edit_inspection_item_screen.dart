@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
 import '../../../data/local_database/local_database_instance.dart';
 import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/sync_service.dart';
 import '../../../data/repositories/inspection_respository.dart';
 import '../../viewModals/inspections/inspection_edit_view_model.dart';
 
-final connectivity = ConnectivityService();
-final syncService = SyncService(db: db, connectivity: connectivity);
+final syncService = SyncService(db: db, connectivity: ConnectivityService.instance);
 final inspectionRepository = InspectionItemsRespository(
   db: db,
   sync: syncService,
@@ -37,7 +37,10 @@ class _EditInspectionItemScreenState extends State<EditInspectionItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Inspection Item")),
+      appBar: AppBar(
+        title: const Text("Edit Inspection Item"),
+        actions: const [OnlineStatusIndicator()],
+      ),
       body: vm.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(

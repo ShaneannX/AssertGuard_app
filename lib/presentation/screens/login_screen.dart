@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'home_screen.dart';
 
@@ -50,7 +51,10 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Welcome to AssetGuard')),
+      appBar: AppBar(
+        title: const Text('Welcome to AssetGuard'),
+        actions: const [OnlineStatusIndicator()],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Center(

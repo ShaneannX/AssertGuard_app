@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:assetguard_app/presentation/widgets/online_status_indicator.dart';
 import '../screens/jobs/job_list_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -38,7 +39,10 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
     return Scaffold(
-      appBar: AppBar(title: const Text("Home")),
+      appBar: AppBar(
+        title: const Text("Home"),
+        actions: const [OnlineStatusIndicator()],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
