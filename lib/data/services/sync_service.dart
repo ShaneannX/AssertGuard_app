@@ -91,7 +91,7 @@ class SyncService {
           try {
             await supabase.from('jobs').delete().eq('id', job.id);// if so we delete them from Supabase
             await db.jobsDao.markSynced(job.id); // Then marked synced so it doesn't appear in pending anymore.
-            await db.jobsDao.softDelete(job.id);  // to remove from local view
+            await db.jobsDao.deleteJob(job.id);  // Removes from local db. 
           } catch (e) {
             print('Deletion failed for job ${job.id}: $e');
             success = false;
@@ -153,7 +153,7 @@ class SyncService {
           try {
             await supabase.from('inspection_items').delete().eq('id', item.id);
             await db.inspectionItemsDao.markSynced(item.id);
-            await db.inspectionItemsDao.softDelete(item.id);
+            await db.inspectionItemsDao.deleteItem(item.id);
           } catch (e) {
             print('Deletion failed for inspection item ${item.id}: $e');
             success = false;
