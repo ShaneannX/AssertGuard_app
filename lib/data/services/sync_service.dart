@@ -72,11 +72,13 @@ class SyncService {
       }
 
       for (final job in pending) {
+        // Then go through each job that is in the pending sync stage.
         if (job.isDeleted) {
+          // check if isDeleted flag is true
           try {
-            await supabase.from('jobs').delete().eq('id', job.id);
-            await db.jobsDao.markSynced(job.id);
-            await db.jobsDao.softDelete(job.id);
+            await supabase.from('jobs').delete().eq('id', job.id);// if so we delete them from Supabase
+            await db.jobsDao.markSynced(job.id); // Then marked synced so it doesn't appear in pending anymore.
+            await db.jobsDao.softDelete(job.id);  // to remove from local view
           } catch (e) {
             print('Deletion failed for job ${job.id}: $e');
             success = false;
