@@ -13,9 +13,21 @@ class SyncService {
   final _syncingController = StreamController<bool>.broadcast();
   Stream<bool> get syncing => _syncingController.stream;
 
-  SyncService({required this.db, required this.connectivity});
+  bool _isSyncing = false;
+
+  SyncService({required this.db, required this.connectivity}) {
+    connectivity.onStatusChange.listen((isOnline) {
+      if (isOnline && !_isSyncing) {
+        syncJobs();
+        syncJobInspection();
+      }
+    });
+  }
 
   Future<void> syncJobs() async {
+    if (!(await connectivity.isOnline())) return;
+
+    _isSyncing = true;
     final pending = await db.jobsDao.getPendingJobs();
     _syncingController.add(true);
     final cloudJobs = await supabase
@@ -75,11 +87,15 @@ class SyncService {
       }
     } finally {
       _syncingController.add(false);
+      _isSyncing = false;
     }
   }
 
   // similar process from above same for InspectionItems.
   Future<void> syncJobInspection() async {
+    if (!(await connectivity.isOnline())) return;
+
+    _isSyncing = true;
     _syncingController.add(true);
 
     final pending = await db.inspectionItemsDao.getPendingItems();
@@ -137,6 +153,7 @@ class SyncService {
       }
     } finally {
       _syncingController.add(false);
+      _isSyncing = false;
     }
   }
 }
