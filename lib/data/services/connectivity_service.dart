@@ -22,7 +22,7 @@ class ConnectivityService {
 
   Stream<bool> get onStatusChange => _controller.stream;
 
-  Future<bool> get isOnline async {
+  Future<bool> isOnline() async {
     final status = await Connectivity().checkConnectivity();
     return status.any(
       (r) => [
