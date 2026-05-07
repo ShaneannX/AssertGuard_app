@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:assetguard_app/data/repositories/jobs_repository.dart';
 import '../local_database/sqlite_database.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,16 +9,40 @@ class SyncService {
   final supabase = Supabase.instance.client;
   final ConnectivityService connectivity;
 
+  // STREAMS
   final _syncingController = StreamController<bool>.broadcast();
   Stream<bool> get syncing => _syncingController.stream;
+
+  final _failedController = StreamController<bool>.broadcast();
+  Stream<bool> get failed => _failedController.stream;
+
+  final _syncedController = StreamController<bool>.broadcast();
+  Stream<bool> get synced => _syncedController.stream;
+
+  final _offlineController = StreamController<bool>.broadcast();
+  Stream<bool> get offline => _offlineController.stream;
 
   bool _isSyncing = false;
 
   SyncService({required this.db, required this.connectivity}) {
-    connectivity.onStatusChange.listen((isOnline) {
-      if (isOnline && !_isSyncing) {
-        syncJobs();
-        syncJobInspection();
+    connectivity.onStatusChange.listen((isOnline) async {
+      if (isOnline) {
+  
+        _failedController.add(false);
+        _offlineController.add(false);
+        final hasPendingJobs = (await db.jobsDao.getPendingJobs()).isNotEmpty;
+        final hasPendingItems =
+            (await db.inspectionItemsDao.getPendingItems()).isNotEmpty;
+
+        if ((hasPendingJobs || hasPendingItems) && !_isSyncing) {
+          await syncJobs();
+          await syncJobInspection();
+        }
+      } else {
+        _offlineController.add(true);
+
+        _failedController.add(false);
+        _syncedController.add(false);
       }
     });
   }
@@ -28,99 +51,86 @@ class SyncService {
     if (!(await connectivity.isOnline())) return;
 
     _isSyncing = true;
-    final pending = await db.jobsDao.getPendingJobs();
     _syncingController.add(true);
-    final cloudJobs = await supabase
-        .from('jobs')
-        .select(); // gets all jobs from supabase
-    final localJobs = await db.jobsDao.getJobs(); // gets all jobs from local db
-    final localIds = localJobs
-        .map((j) => j.id)
-        .toSet(); // gets local Id to see which one is missing within the local db.
-    final cloudOnly = cloudJobs.where(
-      (job) => !localIds.contains(job['id']),
-    ); // gets all the cloud only data, so only data that the id does not exists in the local db.
+
+    bool success = true;
+
+    final pending = await db.jobsDao.getPendingJobs();
+    final cloudJobs = await supabase.from('jobs').select();
+    final localJobs = await db.jobsDao.getJobs();
+    final localIds = localJobs.map((j) => j.id).toSet();
+    final cloudOnly = cloudJobs.where((job) => !localIds.contains(job['id']));
 
     try {
-      // merge with local db
       for (final job in cloudOnly) {
         try {
-          await db.jobsDao.insertFromCloud(
-            job,
-          ); // Calls DAO to merge cloud only data into the local db.
+          await db.jobsDao.insertFromCloud(job);
         } catch (e) {
-          print('Error to update local: $e');
+          print('Error inserting cloud job: $e');
+          success = false;
         }
       }
 
       for (final job in pending) {
-        // Then go through each job that is in the pending sync stage.
         if (job.isDeleted) {
-          // check if isDeleted flag is true
           try {
-            await supabase
-                .from('jobs')
-                .delete()
-                .eq('id', job.id); // if so we delete them from Supabase
-            await db.jobsDao.markSynced(
-              job.id,
-            ); // Then marked synced so it doesn't appear in pending anymore.
+            await supabase.from('jobs').delete().eq('id', job.id);
+            await db.jobsDao.markSynced(job.id);
             await db.jobsDao.softDelete(job.id);
           } catch (e) {
-            print('Deletion Failed for job ${job.id}: $e');
+            print('Deletion failed for job ${job.id}: $e');
+            success = false;
           }
           continue;
         }
+
         try {
-          await supabase
-              .from('jobs')
-              .upsert(
-                job.toSupabaseJson(),
-              ); // Due to schema in supabase not needing isDeleted decided to format the json myself before passing to supabase.
-          await db.jobsDao.markSynced(
-            job.id,
-          ); // after upsert, mark the sync status so it doesn't appear in pending.
+          await supabase.from('jobs').upsert(job.toSupabaseJson());
+          await db.jobsDao.markSynced(job.id);
         } catch (e) {
           print('Upsert failed for job ${job.id}: $e');
+          success = false;
         }
-        continue;
       }
     } finally {
       _syncingController.add(false);
       _isSyncing = false;
+
+      if (success) {
+        _syncedController.add(true);
+        _failedController.add(false);
+      } else {
+        _syncedController.add(false);
+        _failedController.add(true);
+      }
+
     }
   }
 
-  // similar process from above same for InspectionItems.
   Future<void> syncJobInspection() async {
     if (!(await connectivity.isOnline())) return;
 
     _isSyncing = true;
     _syncingController.add(true);
 
+    bool success = true;
+
     final pending = await db.inspectionItemsDao.getPendingItems();
-
     final cloudItems = await supabase.from('inspection_items').select();
-    // final deleteEmptyJobIdItems = await db.inspectionItemsDao.deleteItemsWithEmptyJobId();
-    // deleteEmptyJobIdItems;
     final localItems = await db.inspectionItemsDao.getAllItems();
-    print('LOCAL ITEMS: $localItems');
     final localIds = localItems.map((i) => i.id).toSet();
-
     final cloudOnly = cloudItems.where(
       (item) => !localIds.contains(item['id']),
     );
-    
-    // print('CLOUD ONLY: $cloudOnly');
+
     try {
       for (final item in cloudOnly) {
-        print('Syncing Cloud items');
         try {
           await db.inspectionItemsDao.insertFromCloud(item);
         } catch (e) {
-          print('Error inserting inspection item from cloud: $e');
+          print('Error inserting cloud inspection item: $e');
+          success = false;
         }
-        continue;
       }
 
       for (final item in pending) {
@@ -129,16 +139,15 @@ class SyncService {
             await supabase.from('inspection_items').delete().eq('id', item.id);
             await db.inspectionItemsDao.markSynced(item.id);
             await db.inspectionItemsDao.softDelete(item.id);
-            continue;
           } catch (e) {
-            print("Deletion failed for inspection item ${item.id}: $e");
+            print('Deletion failed for inspection item ${item.id}: $e');
+            success = false;
           }
-          
+          continue;
         }
+
         try {
-          // print('JOBID: $item.jobID');
           await supabase.from('inspection_items').upsert({
-            // Decided to manually populate it within the service here.
             'id': item.id,
             'jobId': item.jobId,
             'description': item.description,
@@ -148,12 +157,22 @@ class SyncService {
           });
           await db.inspectionItemsDao.markSynced(item.id);
         } catch (e) {
-          print("Creating/ Updating inspection item ${item.id} Failed: $e");
+          print('Upsert failed for inspection item ${item.id}: $e');
+          success = false;
         }
       }
     } finally {
       _syncingController.add(false);
       _isSyncing = false;
+
+      if (success) {
+        _syncedController.add(true);
+        _failedController.add(false);
+      } else {
+        _syncedController.add(false);
+        _failedController.add(true);
+      }
+
     }
   }
 }
